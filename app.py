@@ -38,13 +38,23 @@ def find_shelters():
     data = request.get_json()
     latitude = data.get('latitude')
     longitude = data.get('longitude')
+
     if not latitude or not longitude:
         return jsonify({"error": "Latitude and Longitude are required"}), 400
+
     url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-    params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "homeless shelter", "key": GOOGLE_API_KEY}
+    params = {
+        "location": f"{latitude},{longitude}",
+        "radius": 20000,
+        "keyword": "homeless shelter",
+        "key": GOOGLE_API_KEY
+    }
     response = requests.get(url, params=params)
     results = response.json()
-    return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
+    return jsonify({
+        "results": results.get('results', [])[:5],
+        "status": results.get('status', 'UNKNOWN')
+    })
 
 # -----------------------------------------
 @app.route('/find_medicare', methods=['POST'])
@@ -52,13 +62,23 @@ def find_medicare():
     data = request.get_json()
     latitude = data.get('latitude')
     longitude = data.get('longitude')
+
     if not latitude or not longitude:
         return jsonify({"error": "Latitude and Longitude are required"}), 400
+
     url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-    params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "government health facility", "key": GOOGLE_API_KEY}
+    params = {
+        "location": f"{latitude},{longitude}",
+        "radius": 20000,
+        "keyword": "government health facility",
+        "key": GOOGLE_API_KEY
+    }
     response = requests.get(url, params=params)
     results = response.json()
-    return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
+    return jsonify({
+        "results": results.get('results', [])[:5],
+        "status": results.get('status', 'UNKNOWN')
+    })
 
 # -----------------------------------------
 @app.route('/find_food_donation', methods=['POST'])
@@ -66,13 +86,23 @@ def find_food_donation():
     data = request.get_json()
     latitude = data.get('latitude')
     longitude = data.get('longitude')
+
     if not latitude or not longitude:
         return jsonify({"error": "Latitude and Longitude are required"}), 400
+
     url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-    params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "food donation center", "key": GOOGLE_API_KEY}
+    params = {
+        "location": f"{latitude},{longitude}",
+        "radius": 20000,
+        "keyword": "food donation center",
+        "key": GOOGLE_API_KEY
+    }
     response = requests.get(url, params=params)
     results = response.json()
-    return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
+    return jsonify({
+        "results": results.get('results', [])[:5],
+        "status": results.get('status', 'UNKNOWN')
+    })
 
 # -----------------------------------------
 @app.route('/career_help', methods=['POST'])
@@ -80,7 +110,7 @@ def career_help():
     data = request.get_json()
     if not data:
         return jsonify({"error": "Form data is required"}), 400
-    
+
     prompt = f"""
     You are assisting someone to build a strong future.
 
@@ -100,11 +130,13 @@ def career_help():
     try:
         response = gemini_model.generate_content(prompt)
         ai_response = response.text.strip()
+
         history_collection.insert_one({
             "action": "career_help",
             "form_data": data,
             "response": ai_response
         })
+
         return jsonify({"response": ai_response}), 200
     except Exception as e:
         print("Gemini API Error:", str(e))
@@ -117,7 +149,7 @@ def awareness_bulletin():
     city = data.get('city')
     if not city:
         return jsonify({"error": "City is required"}), 400
-    
+
     prompt = f"""
     Create a welcoming, respectful community guide for individuals experiencing housing challenges in {city}.
 
@@ -135,11 +167,13 @@ def awareness_bulletin():
     try:
         response = gemini_model.generate_content(prompt)
         ai_response = response.text.strip()
+
         history_collection.insert_one({
             "action": "awareness_bulletin",
             "city": city,
             "response": ai_response
         })
+
         return jsonify({"response": ai_response}), 200
     except Exception as e:
         print("Gemini API Error:", str(e))
@@ -156,10 +190,12 @@ def get_user_history():
 def search_jobs():
     data = request.get_json()
     keyword = data.get('keyword')
+
     if keyword:
         query = {"position_description": {"$regex": keyword, "$options": "i"}}
     else:
         query = {}
+
     matches = list(businesses_collection.find(query, {'_id': 0}))
     return jsonify(matches)
 
