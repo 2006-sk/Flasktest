@@ -10,7 +10,7 @@ CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://localh
 
 # -----------------------------------------
 # MongoDB Atlas Connection
-client = MongoClient("mongodb+srv://shresthkumarkarnani:HlIH94dBFhoopMc3@cluster0.nhohior.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true&appName=Cluster0")
+client = MongoClient("mongodb+srv://shresthkumarkarnani:HlIH94dBFhoopMc3@cluster0.nhohior.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['riseup']
 history_collection = db['user_history']
 businesses_collection = db['business_list']
@@ -22,8 +22,8 @@ GEMINI_API_KEY = "AIzaSyCSd3g9AR_wqB5oMBekw2L2H-6Ht4mjkC8"
 
 # -----------------------------------------
 # Configure Gemini API
-genai.configure(api_key=GEMINI_API_KEY, transport="rest")
-gemini_model = genai.GenerativeModel(model_name="gemini-1.0-pro")  # ⚡ lighter model (NOT 1.5-pro)
+genai.configure(api_key=GEMINI_API_KEY)
+gemini_model = genai.GenerativeModel("gemini-pro")  # Note: no transport="rest" anymore!
 
 # -----------------------------------------
 # Routes
@@ -35,162 +35,135 @@ def home():
 # -----------------------------------------
 @app.route('/find_shelters', methods=['POST'])
 def find_shelters():
-    try:
-        data = request.get_json()
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
-        if not latitude or not longitude:
-            return jsonify({"error": "Latitude and Longitude are required"}), 400
-
-        url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "homeless shelter", "key": GOOGLE_API_KEY}
-        response = requests.get(url, params=params)
-        results = response.json()
-
-        return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
-    except Exception as e:
-        print(f"Find Shelters Error: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+    data = request.get_json()
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    if not latitude or not longitude:
+        return jsonify({"error": "Latitude and Longitude are required"}), 400
+    url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "homeless shelter", "key": GOOGLE_API_KEY}
+    response = requests.get(url, params=params)
+    results = response.json()
+    return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
 
 # -----------------------------------------
 @app.route('/find_medicare', methods=['POST'])
 def find_medicare():
-    try:
-        data = request.get_json()
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
-        if not latitude or not longitude:
-            return jsonify({"error": "Latitude and Longitude are required"}), 400
-
-        url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "government health facility", "key": GOOGLE_API_KEY}
-        response = requests.get(url, params=params)
-        results = response.json()
-
-        return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
-    except Exception as e:
-        print(f"Find Medicare Error: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+    data = request.get_json()
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    if not latitude or not longitude:
+        return jsonify({"error": "Latitude and Longitude are required"}), 400
+    url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "government health facility", "key": GOOGLE_API_KEY}
+    response = requests.get(url, params=params)
+    results = response.json()
+    return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
 
 # -----------------------------------------
 @app.route('/find_food_donation', methods=['POST'])
 def find_food_donation():
-    try:
-        data = request.get_json()
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
-        if not latitude or not longitude:
-            return jsonify({"error": "Latitude and Longitude are required"}), 400
-
-        url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "food donation center", "key": GOOGLE_API_KEY}
-        response = requests.get(url, params=params)
-        results = response.json()
-
-        return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
-    except Exception as e:
-        print(f"Find Food Donation Error: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+    data = request.get_json()
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    if not latitude or not longitude:
+        return jsonify({"error": "Latitude and Longitude are required"}), 400
+    url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    params = {"location": f"{latitude},{longitude}", "radius": 20000, "keyword": "food donation center", "key": GOOGLE_API_KEY}
+    response = requests.get(url, params=params)
+    results = response.json()
+    return jsonify({"results": results.get('results', [])[:5], "status": results.get('status', 'UNKNOWN')})
 
 # -----------------------------------------
 @app.route('/career_help', methods=['POST'])
 def career_help():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Form data is required"}), 400
+
+    prompt = f"""
+    You are assisting someone to build a strong future.
+
+    Based on the following user profile, suggest exactly 5 career paths that best fit their strengths and interests.
+
+    For each career path:
+    - Briefly explain the path.
+    - Provide a clear step-by-step action plan to succeed.
+    - End each suggestion with a short motivating note.
+
+    Be warm, clear, realistic, and use positive, simple English.
+
+    User Profile:
+    {data}
+    """
+
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "Form data is required"}), 400
-
-        prompt = f"""
-        You are assisting someone to build a strong future.
-
-        Based on the following user profile, suggest exactly 5 career paths that best fit their strengths and interests.
-
-        For each career path:
-        - Briefly explain the path.
-        - Provide a clear step-by-step action plan to succeed.
-        - End each suggestion with a short motivating note.
-
-        Be warm, clear, realistic, and use positive, simple English.
-
-        User Profile:
-        {data}
-        """
-
-        response = gemini_model.generate_content(prompt)
+        response = gemini_model.generate_content([prompt])  # <- notice [prompt] as a list!
         ai_response = response.text.strip()
-
         history_collection.insert_one({
             "action": "career_help",
             "form_data": data,
             "response": ai_response
         })
-
         return jsonify({"response": ai_response}), 200
     except Exception as e:
-        print(f"Career Help Error: {e}")
+        print("Career Help Error:", str(e))
         return jsonify({"error": "AI service error", "details": str(e)}), 500
 
 # -----------------------------------------
 @app.route('/awareness_bulletin', methods=['POST'])
 def awareness_bulletin():
+    data = request.get_json()
+    city = data.get('city')
+    if not city:
+        return jsonify({"error": "City is required"}), 400
+
+    prompt = f"""
+    Create a welcoming, respectful community guide for individuals experiencing housing challenges in {city}.
+
+    The bulletin should:
+    - List important support programs, assistance centers, and helpful organizations.
+    - Mention special rights, services, and opportunities available.
+    - Give a simple guide on how to access help easily and with dignity.
+
+    Use warm, hopeful, and positive English.
+    Avoid terms like "homeless" — instead use "those navigating housing challenges".
+
+    Keep the tone supportive and inspiring.
+    """
+
     try:
-        data = request.get_json()
-        city = data.get('city')
-        if not city:
-            return jsonify({"error": "City is required"}), 400
-
-        prompt = f"""
-        Create a welcoming, respectful community guide for individuals experiencing housing challenges in {city}.
-
-        The bulletin should:
-        - List important support programs, assistance centers, and helpful organizations.
-        - Mention special rights, services, and opportunities available.
-        - Give a simple guide on how to access help easily and with dignity.
-
-        Use warm, hopeful, and positive English.
-        Avoid terms like "homeless" — instead use "those navigating housing challenges".
-
-        Keep the tone supportive and inspiring.
-        """
-
-        response = gemini_model.generate_content(prompt)
+        response = gemini_model.generate_content([prompt])  # <- notice [prompt] as a list!
         ai_response = response.text.strip()
-
         history_collection.insert_one({
             "action": "awareness_bulletin",
             "city": city,
             "response": ai_response
         })
-
         return jsonify({"response": ai_response}), 200
     except Exception as e:
-        print(f"Awareness Bulletin Error: {e}")
+        print("Awareness Bulletin Error:", str(e))
         return jsonify({"error": "AI service error", "details": str(e)}), 500
 
 # -----------------------------------------
 @app.route('/user_history', methods=['GET'])
 def get_user_history():
-    try:
-        user_actions = list(history_collection.find({}, {'_id': 0}))
-        return jsonify(user_actions), 200
-    except Exception as e:
-        print(f"User History Error: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+    user_actions = list(history_collection.find({}, {'_id': 0}))
+    return jsonify(user_actions)
 
 # -----------------------------------------
 @app.route('/search_jobs', methods=['POST'])
 def search_jobs():
-    try:
-        data = request.get_json()
-        keyword = data.get('keyword', '')
-        query = {"position_description": {"$regex": keyword, "$options": "i"}} if keyword else {}
-        matches = list(businesses_collection.find(query, {'_id': 0}))
-
-        return jsonify(matches), 200
-    except Exception as e:
-        print(f"Search Jobs Error: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+    data = request.get_json()
+    keyword = data.get('keyword')
+    if keyword:
+        query = {"position_description": {"$regex": keyword, "$options": "i"}}
+    else:
+        query = {}
+    matches = list(businesses_collection.find(query, {'_id': 0}))
+    return jsonify(matches)
 
 # -----------------------------------------
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
