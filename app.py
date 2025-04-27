@@ -6,7 +6,7 @@ import uuid
 import google.generativeai as genai
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://localhost:5176"]}})
+CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://localhost:5176", "https://riseup123.netlify.app"]}})
 
 # -----------------------------------------
 # MongoDB Atlas Connection
