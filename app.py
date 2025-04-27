@@ -22,7 +22,7 @@ GEMINI_API_KEY = "AIzaSyCSd3g9AR_wqB5oMBekw2L2H-6Ht4mjkC8"
 
 # Configure Gemini API
 genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel(model_name="gemini-1.5-pro")  # Correct model name
+gemini_model = genai.GenerativeModel(model_name="gemini-pro")  # Correct model name
 
 # -----------------------------------------
 # Routes
