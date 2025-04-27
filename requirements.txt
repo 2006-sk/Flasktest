@@ -1,1 +1,4 @@
 gunicorn
+flask
+pymongo
+requests
