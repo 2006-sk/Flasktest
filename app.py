@@ -1,14 +1,18 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
+from flask_cors import CORS
 import requests
 import uuid
 import google.generativeai as genai
 
 app = Flask(__name__)
 CORS(app)
+<<<<<<< HEAD
 
 # -----------------------------------------
+=======
+>>>>>>> 4d120059eed1daa425447b5e28864eeaeb198722
 # MongoDB Atlas Connection
 client = MongoClient("mongodb+srv://shresthkumarkarnani:HlIH94dBFhoopMc3@cluster0.nhohior.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['riseup']
