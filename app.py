@@ -10,7 +10,7 @@ CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://localh
 
 # -----------------------------------------
 # MongoDB Atlas Connection
-client = MongoClient("mongodb+srv://shresthkumarkarnani:HlIH94dBFhoopMc3@cluster0.nhohior.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient("mongodb+srv://shresthkumarkarnani:HlIH94dBFhoopMc3@cluster0.nhohior.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true&appName=Cluster0")
 db = client['riseup']
 history_collection = db['user_history']
 businesses_collection = db['business_list']
@@ -23,7 +23,7 @@ GEMINI_API_KEY = "AIzaSyCSd3g9AR_wqB5oMBekw2L2H-6Ht4mjkC8"
 # -----------------------------------------
 # Configure Gemini API
 genai.configure(api_key=GEMINI_API_KEY, transport="rest")
-gemini_model = genai.GenerativeModel(model_name="gemini-pro")  # ⚡ lighter model (NOT 1.5-pro)
+gemini_model = genai.GenerativeModel(model_name="gemini-1.0-pro")  # ⚡ lighter model (NOT 1.5-pro)
 
 # -----------------------------------------
 # Routes
