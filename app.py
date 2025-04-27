@@ -41,7 +41,7 @@ def signup_user():
     confirm_password = data.get('confirm_password')
 
     if not username or not password or not confirm_password:
-        return jsonify({"error": "Username, Password, and Confirm Password are required."}), 400
+        return jsonify({"error": "Username, Password, and Confirm Password are required."}), 403
 
     if password != confirm_password:
         return jsonify({"error": "Passwords do not match."}), 400
