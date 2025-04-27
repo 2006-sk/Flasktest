@@ -1,45 +1,86 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from pymongo import MongoClient
 import requests
 import uuid
+import google.generativeai as genai
 
 app = Flask(__name__)
+CORS(app)
 
+# -----------------------------------------
 # MongoDB Atlas Connection
 client = MongoClient("mongodb+srv://shresthkumarkarnani:HlIH94dBFhoopMc3@cluster0.nhohior.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['riseup']
 users_collection = db['users']
 history_collection = db['user_history']
 
-# Google Places API Key
+# -----------------------------------------
+# API Keys
 GOOGLE_API_KEY = "AIzaSyCSd3g9AR_wqB5oMBekw2L2H-6Ht4mjkC8"
+GEMINI_API_KEY = "AIzaSyCSd3g9AR_wqB5oMBekw2L2H-6Ht4mjkC8"
+
+# Configure Gemini API
+genai.configure(api_key=GEMINI_API_KEY)
+gemini_model = genai.GenerativeModel(model_name="gemini-1.5-pro")  # Correct model name
+
+# -----------------------------------------
+# Routes
 
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({"message": "RiseUp AI Flask Server is running!"})
 
 # -----------------------------------------
-# 1. User Login/Signup
-@app.route('/login', methods=['POST'])
-def login_user():
+# 1. User Sign Up (new user registration)
+@app.route('/signup', methods=['POST'])
+def signup_user():
     data = request.get_json()
-    if not data or not data.get('email') or not data.get('name'):
-        return jsonify({"error": "Name and Email are required"}), 400
-    
-    user = users_collection.find_one({"email": data['email']})
-    if user:
-        return jsonify({"message": "User already exists", "user_id": str(user['_id'])})
-    
+    username = data.get('username')
+    password = data.get('password')
+    confirm_password = data.get('confirm_password')
+
+    if not username or not password or not confirm_password:
+        return jsonify({"error": "Username, Password, and Confirm Password are required."}), 400
+
+    if password != confirm_password:
+        return jsonify({"error": "Passwords do not match."}), 400
+
+    existing_user = users_collection.find_one({"username": username})
+    if existing_user:
+        return jsonify({"error": "Username already exists. Please choose another."}), 409
+
     user_id = str(uuid.uuid4())
     users_collection.insert_one({
         "_id": user_id,
-        "name": data['name'],
-        "email": data['email']
+        "username": username,
+        "password": password   # Note: plaintext now, hashing recommended for real apps
     })
-    return jsonify({"message": "User registered successfully", "user_id": user_id}), 201
+
+    return jsonify({"message": "Account created successfully!", "user_id": user_id}), 201
 
 # -----------------------------------------
-# 2. Find Shelters Nearby (using text search for better accuracy)
+# 2. User Login (sign in existing user)
+@app.route('/login', methods=['POST'])
+def login_user():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({"error": "Username and Password are required."}), 400
+
+    user = users_collection.find_one({"username": username})
+    if not user:
+        return jsonify({"error": "User not found. Please sign up first."}), 404
+
+    if user['password'] != password:
+        return jsonify({"error": "Incorrect password. Please try again."}), 401
+
+    return jsonify({"message": "Login successful!", "user_id": str(user['_id'])}), 200
+
+# -----------------------------------------
+# 2. Find Shelters Nearby (Google Places)
 @app.route('/find_shelters', methods=['POST'])
 def find_shelters():
     data = request.get_json()
@@ -56,7 +97,7 @@ def find_shelters():
     return jsonify(shelters)
 
 # -----------------------------------------
-# 3. Medical Assistance Questions (for Gemini AI)
+# 3. Medical Assistance Chatbot (Gemini AI)
 @app.route('/medical_assistance', methods=['POST'])
 def medical_assistance():
     data = request.get_json()
@@ -65,10 +106,11 @@ def medical_assistance():
     if not question:
         return jsonify({"error": "Question is required"}), 400
 
-    # SPACE FOR GEMINI AI INTEGRATION
-    ai_response = "AI response placeholder (medical assistance)"
+    # Query Gemini
+    response = gemini_model.generate_content(question)
+    ai_response = response.text.strip()
 
-    # Log to user history
+    # Log interaction
     history_collection.insert_one({
         "action": "medical_assistance",
         "question": question,
@@ -78,17 +120,27 @@ def medical_assistance():
     return jsonify({"response": ai_response})
 
 # -----------------------------------------
-# 4. Career Help Form Submission (for Gemini AI)
+# 4. Career Help / Dynamic Form Submission (Gemini AI)
 @app.route('/career_help', methods=['POST'])
 def career_help():
     data = request.get_json()
     if not data:
         return jsonify({"error": "Form data is required"}), 400
 
-    # SPACE FOR GEMINI AI INTEGRATION
-    ai_response = "AI response placeholder (career guidance)"
+    prompt = f"""
+    Based on the following user profile, suggest 5 strong career options along with brief reasoning for each:
 
-    # Log to user history
+    User Profile:
+    {data}
+    
+    Please give detailed options in simple, user-friendly language.
+    """
+
+    # Query Gemini
+    response = gemini_model.generate_content(prompt)
+    ai_response = response.text.strip()
+
+    # Log interaction
     history_collection.insert_one({
         "action": "career_help",
         "form_data": data,
@@ -105,7 +157,7 @@ def get_user_history():
     return jsonify(user_actions)
 
 # -----------------------------------------
-# 6. Search Any Place (new test route for Google Places API)
+# 6. Search Any Place (Testing Google Places Text Search)
 @app.route('/search_place', methods=['POST'])
 def search_place():
     data = request.get_json()
