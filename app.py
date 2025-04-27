@@ -1,18 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
-from flask_cors import CORS
 import requests
 import uuid
 import google.generativeai as genai
 
 app = Flask(__name__)
 CORS(app)
-<<<<<<< HEAD
 
 # -----------------------------------------
-=======
->>>>>>> 4d120059eed1daa425447b5e28864eeaeb198722
 # MongoDB Atlas Connection
 client = MongoClient("mongodb+srv://shresthkumarkarnani:HlIH94dBFhoopMc3@cluster0.nhohior.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['riseup']
@@ -58,7 +54,7 @@ def signup_user():
     users_collection.insert_one({
         "_id": user_id,
         "username": username,
-        "password": password   # Note: plaintext now, hashing recommended for real apps
+        "password": password  # (Note: plaintext, hash it in real projects)
     })
 
     return jsonify({"message": "Account created successfully!", "user_id": user_id}), 201
@@ -84,7 +80,7 @@ def login_user():
     return jsonify({"message": "Login successful!", "user_id": str(user['_id'])}), 200
 
 # -----------------------------------------
-# 2. Find Shelters Nearby (Google Places)
+# 3. Find Shelters Nearby (Google Places)
 @app.route('/find_shelters', methods=['POST'])
 def find_shelters():
     data = request.get_json()
@@ -101,7 +97,7 @@ def find_shelters():
     return jsonify(shelters)
 
 # -----------------------------------------
-# 3. Medical Assistance Chatbot (Gemini AI)
+# 4. Medical Assistance Chatbot (Gemini AI)
 @app.route('/medical_assistance', methods=['POST'])
 def medical_assistance():
     data = request.get_json()
@@ -110,7 +106,6 @@ def medical_assistance():
     if not question:
         return jsonify({"error": "Question is required"}), 400
 
-    # Query Gemini
     response = gemini_model.generate_content(question)
     ai_response = response.text.strip()
 
@@ -124,7 +119,7 @@ def medical_assistance():
     return jsonify({"response": ai_response})
 
 # -----------------------------------------
-# 4. Career Help / Dynamic Form Submission (Gemini AI)
+# 5. Career Help (Dynamic Form Submission to Gemini AI)
 @app.route('/career_help', methods=['POST'])
 def career_help():
     data = request.get_json()
@@ -136,11 +131,10 @@ def career_help():
 
     User Profile:
     {data}
-    
+
     Please give detailed options in simple, user-friendly language.
     """
 
-    # Query Gemini
     response = gemini_model.generate_content(prompt)
     ai_response = response.text.strip()
 
@@ -154,14 +148,14 @@ def career_help():
     return jsonify({"response": ai_response})
 
 # -----------------------------------------
-# 5. View User History
+# 6. View User History
 @app.route('/user_history', methods=['GET'])
 def get_user_history():
     user_actions = list(history_collection.find({}, {'_id': 0}))
     return jsonify(user_actions)
 
 # -----------------------------------------
-# 6. Search Any Place (Testing Google Places Text Search)
+# 7. Search Any Place (Google Places text search)
 @app.route('/search_place', methods=['POST'])
 def search_place():
     data = request.get_json()
